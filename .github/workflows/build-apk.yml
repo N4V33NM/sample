@@ -1,49 +1,49 @@
 name: Build APK
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-latest
+    
     steps:
+    # Checkout code from the repository
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up JDK
+    # Set up JDK (required for building Android)
+    - name: Set up JDK 11
       uses: actions/setup-java@v3
       with:
-        java-version: '17'
-        distribution: 'zulu'
+        java-version: '11'
+        distribution: 'adoptopenjdk'
 
-    - name: Remove Old Gradle
-      run: rm -rf ~/.gradle/wrapper/dists/
-
-    - name: Download and Upgrade Gradle
-      run: |
-        wget https://services.gradle.org/distributions/gradle-7.5.1-bin.zip -O gradle.zip
-        unzip gradle.zip
-        mv gradle-7.5.1 gradle
-        echo "$PWD/gradle/bin" >> $GITHUB_PATH
-
-    - name: Set executable permissions for Gradle Wrapper
-      run: chmod +x ./gradlew
-      working-directory: AndroidKeylogger
-
-    - name: Force Update Gradle Wrapper
-      run: ./gradlew wrapper --gradle-version 7.5.1 --distribution-type all
-      working-directory: AndroidKeylogger
-
-    - name: Build APK
-      run: ./gradlew assembleDebug
-      working-directory: AndroidKeylogger
-
-    - name: Upload APK as Artifact
-      uses: actions/upload-artifact@v4
+    # Cache Gradle dependencies to speed up the build
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v3
       with:
-        name: built-apk
-        path: AndroidKeylogger/app/build/outputs/apk/debug/app-debug.apk
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    # Build the APK using Gradle
+    - name: Build APK
+      run: ./gradlew assembleRelease
+
+    # Upload APK as artifact
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: my-apk
+        path: app/build/outputs/apk/release/app-release.apk
+
 
 
 
