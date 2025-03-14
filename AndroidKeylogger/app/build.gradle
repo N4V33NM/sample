@@ -1,16 +1,19 @@
 plugins {
-    id 'com.android.application'  // Apply only the Android plugin
+    id 'com.android.application'  // Apply Android plugin
 }
 
 android {
-    compileSdkVersion 30  // Use an appropriate SDK version
+    namespace 'com.bshu2.androidkeylogger' // Required for AGP 8.0+
+    compileSdk 34  // Updated SDK version
 
     defaultConfig {
         applicationId "com.bshu2.androidkeylogger"
-        minSdkVersion 21  // Minimum SDK required for your app
-        targetSdkVersion 30  // Target SDK version
-        versionCode 1  // Increment with each release
-        versionName "1.0"  // Version name to show in the app
+        minSdk 21  // Minimum supported SDK version
+        targetSdk 34  // Target latest SDK
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -20,25 +23,21 @@ android {
         }
     }
 
-    // Optional: Enable AndroidX
-    // (make sure `gradle.properties` has android.useAndroidX=true and android.enableJetifier=true)
-}
-
-repositories {
-    google()  // Add Google's Maven repository
-    mavenCentral()  // Add Maven Central for dependencies
+    buildFeatures {
+        viewBinding true // Optional: Enables ViewBinding support
+    }
 }
 
 dependencies {
-    // AndroidX dependencies
-    implementation 'androidx.appcompat:appcompat:1.3.1'  // For AppCompat support
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'  // For ConstraintLayout
+    // AndroidX Libraries
+    implementation 'androidx.appcompat:appcompat:1.6.1'  // Updated to latest version
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4' 
 
-    // Optional: Material Design for UI components
-    implementation 'com.google.android.material:material:1.4.0'
+    // Material Design for UI components
+    implementation 'com.google.android.material:material:1.11.0'
 
-    // Testing dependencies
-    testImplementation 'junit:junit:4.13.2'  // JUnit for unit tests
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'  // JUnit for instrumentation tests
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'  // Espresso for UI testing
+    // Testing Dependencies
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
