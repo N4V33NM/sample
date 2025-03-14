@@ -17,17 +17,17 @@ jobs:
         java-version: '17'
         distribution: 'zulu'
 
-    - name: Ensure Gradle wrapper directory exists
+    - name: Set up Gradle Wrapper
       run: |
         mkdir -p gradle/wrapper
         echo "distributionUrl=https\://services.gradle.org/distributions/gradle-7.5.1-all.zip" > gradle/wrapper/gradle-wrapper.properties
 
-    - name: Set executable permissions for gradlew
+    - name: Set executable permissions for Gradle
       run: chmod +x ./gradlew
       working-directory: AndroidKeylogger
 
-    - name: Update Gradle Wrapper
-      run: ./gradlew wrapper --gradle-version 7.5.1
+    - name: Upgrade Gradle to 7.5.1
+      run: ./gradlew wrapper --gradle-version 7.5.1 --distribution-type all
       working-directory: AndroidKeylogger
 
     - name: Build APK
@@ -39,5 +39,6 @@ jobs:
       with:
         name: built-apk
         path: AndroidKeylogger/app/build/outputs/apk/debug/app-debug.apk
+
 
 
