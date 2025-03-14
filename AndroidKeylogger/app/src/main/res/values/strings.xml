@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Chess</string>
-    <string name="accessibility_service_label">Accessibility Service</string> <!-- Add this line -->
+    <string name="app_name">AndroidKeylogger</string>
+    <string name="accessibility_service_label">...</string>
 </resources>
