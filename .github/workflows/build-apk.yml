@@ -1,48 +1,53 @@
 name: Build APK
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-22.04
+
     steps:
-    # Checkout code from the repository
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Set up JDK (required for building Android)
-    - name: Set up JDK 11
+    - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
-        java-version: '11'
-        distribution: 'adoptopenjdk'
+        java-version: '17'
+        distribution: 'zulu'
 
-    # Cache Gradle dependencies to speed up the build
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
+    - name: Remove Old Gradle Versions
+      run: rm -rf ~/.gradle/wrapper/dists/ ~/.gradle/caches/gradle-*
 
-    # Build the APK using Gradle
+    - name: Manually Install Gradle 7.5.1
+      run: |
+        wget https://services.gradle.org/distributions/gradle-7.5.1-bin.zip -O gradle.zip
+        unzip gradle.zip
+        sudo mv gradle-7.5.1 /opt/gradle
+        echo "export PATH=/opt/gradle/bin:\$PATH" >> ~/.bashrc
+        source ~/.bashrc
+        gradle --version
+
+    - name: Force Update Gradle Wrapper
+      run: |
+        /opt/gradle/bin/gradle wrapper --gradle-version 7.5.1 --distribution-type all
+      working-directory: AndroidKeylogger || true  # Allow it to continue if it fails
+
+    - name: Set Executable Permissions for Gradle Wrapper
+      run: chmod +x ./gradlew
+      working-directory: AndroidKeylogger
+
     - name: Build APK
-      run: ./gradlew assembleRelease
+      run: ./gradlew assembleDebug --stacktrace
+      working-directory: AndroidKeylogger
 
-    # Upload APK as artifact
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v3
+    - name: Upload APK as Artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: my-apk
-        path: app/build/outputs/apk/release/app-release.apk
+        name: built-apk
+        path: AndroidKeylogger/app/build/outputs/apk/debug/app-debug.apk
+
 
 
 
