@@ -12,7 +12,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Verify Repository Structure
-      run: ls -R   # List all files to debug structure issues
+      run: ls -R   # Debugging: Check if AndroidKeylogger directory exists
 
     - name: Ensure Project Directory Exists
       run: |
@@ -27,10 +27,10 @@ jobs:
         java-version: '17'
         distribution: 'zulu'
 
-    - name: Clean Old Gradle Versions
-      run: rm -rf ~/.gradle/wrapper/dists/ ~/.gradle/caches/gradle-*
+    - name: Remove Old Gradle Versions
+      run: rm -rf ~/.gradle/wrapper/dists/ ~/.gradle/caches/gradle-* || true
 
-    - name: Install Gradle 7.5.1 Manually
+    - name: Manually Install Gradle 7.5.1
       run: |
         wget https://services.gradle.org/distributions/gradle-7.5.1-bin.zip -O gradle.zip
         unzip gradle.zip
@@ -39,24 +39,25 @@ jobs:
         source ~/.bashrc
         gradle --version
 
-    - name: Ensure Gradle Wrapper is Updated
+    - name: Update Gradle Wrapper
       working-directory: AndroidKeylogger
       run: |
-        /opt/gradle/bin/gradle wrapper --gradle-version 7.5.1 --distribution-type all || echo "Gradle wrapper update failed, skipping"
+        /opt/gradle/bin/gradle wrapper --gradle-version 7.5.1 --distribution-type all
 
     - name: Set Gradlew Executable Permission
       run: chmod +x ./gradlew
       working-directory: AndroidKeylogger
 
     - name: Build APK
-      run: ./gradlew assembleDebug --stacktrace
       working-directory: AndroidKeylogger
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK as Artifact
       uses: actions/upload-artifact@v4
       with:
         name: built-apk
         path: AndroidKeylogger/app/build/outputs/apk/debug/app-debug.apk
+
 
 
 
