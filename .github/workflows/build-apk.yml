@@ -11,16 +11,26 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Verify Repository Structure
+      run: ls -R   # List all files to debug structure issues
+
+    - name: Ensure Project Directory Exists
+      run: |
+        if [ ! -d "AndroidKeylogger" ]; then
+          echo "Error: AndroidKeylogger directory not found!"
+          exit 1
+        fi
+
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'zulu'
 
-    - name: Remove Old Gradle Versions
+    - name: Clean Old Gradle Versions
       run: rm -rf ~/.gradle/wrapper/dists/ ~/.gradle/caches/gradle-*
 
-    - name: Manually Install Gradle 7.5.1
+    - name: Install Gradle 7.5.1 Manually
       run: |
         wget https://services.gradle.org/distributions/gradle-7.5.1-bin.zip -O gradle.zip
         unzip gradle.zip
@@ -29,12 +39,12 @@ jobs:
         source ~/.bashrc
         gradle --version
 
-    - name: Force Update Gradle Wrapper
+    - name: Ensure Gradle Wrapper is Updated
+      working-directory: AndroidKeylogger
       run: |
-        /opt/gradle/bin/gradle wrapper --gradle-version 7.5.1 --distribution-type all
-      working-directory: AndroidKeylogger || true  # Allow it to continue if it fails
+        /opt/gradle/bin/gradle wrapper --gradle-version 7.5.1 --distribution-type all || echo "Gradle wrapper update failed, skipping"
 
-    - name: Set Executable Permissions for Gradle Wrapper
+    - name: Set Gradlew Executable Permission
       run: chmod +x ./gradlew
       working-directory: AndroidKeylogger
 
@@ -47,6 +57,7 @@ jobs:
       with:
         name: built-apk
         path: AndroidKeylogger/app/build/outputs/apk/debug/app-debug.apk
+
 
 
 
