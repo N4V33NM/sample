@@ -12,11 +12,11 @@
 
     <application
         android:allowBackup="true"
-        android:label="SmsEye"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@mipmap/pngnew"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/pngnew"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SmsEye">
+        android:theme="@style/AppTheme">
 
         <!-- MainActivity -->
         <activity android:name=".SmsEyeMainActivity">
