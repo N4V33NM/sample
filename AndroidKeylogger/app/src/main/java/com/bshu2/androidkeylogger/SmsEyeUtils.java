@@ -1,28 +1,22 @@
 package com.bshu2.androidkeylogger;
 
+import android.content.ContentResolver;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.provider.Settings;
 
 public class SmsEyeUtils {
 
+    // Modify this method to use context passed from the caller
     public static boolean isPermissionGranted(Context context) {
-        return context.checkSelfPermission(android.Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED;
+        ContentResolver contentResolver = context.getContentResolver();
+        String permissionStatus = Settings.Secure.getString(contentResolver, "sms_default_application");
+        // Your logic for permission check
+        return permissionStatus != null;
     }
 
-    public static String getDeviceName() {
-        return Build.MANUFACTURER + " " + Build.MODEL + "\nandroid_id : " + getAndroidId();
-    }
-
-    public static String getAndroidId() {
-        try {
-            return Settings.Secure.getString(
-                    android.content.ContextWrapper.getApplicationContext().getContentResolver(),
-                    Settings.Secure.ANDROID_ID
-            );
-        } catch (Exception e) {
-            return "Unknown";
-        }
+    // Modify this method to use context passed from the caller
+    public static String getDeviceName(Context context) {
+        return android.os.Build.MODEL; // Example - Modify if necessary
     }
 }
+
